@@ -1,0 +1,56 @@
+\section{PRELIMINARIES}
+
+\subsection{Boolean transition system}
+
+Modern SAT-based model checking techniques consider the \emph{Boolean transition system} as the model. A \textit{Boolean transition system} $Sys$ is a tuple $(V,I,T)$, where $V$ is a set of Boolean variables, and each state s of the system is in $2^{V}$, the set of truth assignments to variables in $V$. $I$ is the set of initial states. If we mark the copy of $V$ as $V^{'}$ to represent the set of primed variables, $T$ is the transition relation of the system over $V \cup V^{'}$. We say that state $s_{2}$ is a \textit{successor} of state $s_{1}$, iff $s_{1} \cup s^{'}_{2} \models T$, denoted $(s_{1},s_{2}) \in T$.
+
+
+A finite state squence $s_{0},s_{1},......,s_{k}$ is called a path of length $k$, if each $(s_{i},s_{i+1})$ for $(0 \leq i \leq k-1)$ is in $T$. We say the state $t$ is reachable from state $p$ in (resp. within) $k$ steps, if there exists a finite path with length $k$ (resp. smaller than $k$) such that $s_{0} = p$ and $s_{k} = t$ are true. The set of all states that are reachable from the initial states $I$ is called the reachable states of $Sys$.
+Given a safety property $P$ (represented as a Boolean formula) and Boolean transition system $Sys = (V,I,T)$, we say the system is \emph{safe} if $P$ holds for all the reachable states of $Sys$. Otherwise, the system is \emph{unsafe}. We call the state violating $P$ is a \emph{bad} state and use $\neg P$ to denote the set of all bad states. A path from an initial state in $I$ to one of the bad states in $\neg P$ is called a \emph{counterexample}.
+
+Let $X \subseteq 2^{V}$ be a set of states in $Sys$. We define the relation $R(X)$ to be the set of successors of the states in $X$, i.e.,  $R(X) = \lbrace s^{'}|(s,s^{'}) \in T\, \textit{ for }s \in X \rbrace$. We define $R^{i}(X) = R(R^{i-1}(X))$ for $i > 1$. Similarly, we define $R^{-1}(X)$ as the set of predecessors of states in $X$ and $R^{-i}(X)$ analogously for $i > 1$.
+
+We call a Boolean variable $a$ or its negation $\neg a$ as a \emph{literal}.
+Let $L$ be a set of literals. A \emph{cube} is Boolean formula with the form of $\bigwedge l$ where $l\in L$. Analogously, a \emph{clause} is Boolean formula with the form of $\bigvee l$ where $l\in L$. It is not trivial to see that a state of $Sys$ is a cube.
+
+\subsection{SAT calls with assumptions and unsatisfiable core}
+The CAR algorithm frequently invokes the SAT calls whose inputs have the form of $A\wedge B$, where B is a CNF formula\footnote{The Boolean formula with the form of $\bigwedge c_i$ where each $c_i$ is a clause.} and A is a cube. We use the notation $SAT(A, B)$ to represent such SAT query and take $A$ as the \emph{assumptions} of the SAT solver. Although the result of $SAT(\emptyset,A \bigwedge B)$ is equivalent to that of $SAT(A,B)$, using the latter one is typically more flexible for incremental SAT calling, which is a very efficient mechanism to frequently invoke SAT solvers in practice.   
+There are two different outcomes from an SAT solver when handling the query $SAT (A, B)$. If the result is \emph{satisfiable}, an assignment of the formula $A\wedge B$ is provided by the SAT solver. Otherwise, $A\wedge B$ is unsatisfiable and an Unsatisfiable Core (UC) $uc\subseteq A$, which is a subset of the assumptions $A$, can be returned by the SAT solver.
+
+\iffalse
+In the CAR algorithm, A is usually an explicit state and B is $T \bigwedge B_{i}$, where $T$ is the transition system of $Sys=(V,I,T)$ and $B_{i}$ is the \textit{i}-th level of B-sequence(will describe in below).
+
+A SAT call like $\mathit{SAT}(A,B)$ will have two possible outcomes: 
+
+1.satisfied, we will then use \textbf{get\_assignment()} to get a satisfying assignment to literals in A and B. 
+
+2.unsatisfied, we will then use \textbf{get\_unsat\_core()} to get an unsatisfiable core c that $ c \subseteq A $ and $ c \bigwedge T $ is unsatisfiable.
+
+
+In mathematical logic, given an unsatisfiable Boolean propositional formula in conjunctive normal form, like $\mathit{SAT}(A,B)$, if the outcome is unsatisfied, a subset of clauses whose conjunction is still unsatisfiable is called an unsatisfiable core of the original formula. In the CAR algorithm, the unsatisfiable core comes from the assumption which means it only contains some of the literals from the assumption. For example, given an unsatisfied SAT call $\mathit{SAT}(A,B)$, where A is a conjunction of literals $A=l_{1}\cap l_{2}\cap l_{3}\cap ...\cap l_{n}$ and B is a conjunction of clause $B=c_{1}\cap c_{2}\cap...\cap c_{m}$. The obtained unsatisfiable core will be $u_{1}\cap u_{2}\cap...\cap u_{j} \quad u_{i}\in A \,(1\leq i\leq j)$.
+\fi
+
+\subsection{An Overview of Complementary Approximate Reachability}
+
+Derived from the traditional reachability analysis, CAR can also perform in both the forward and backward directions. 
+As mentioned before, Backward CAR has been shown better than Forward CAR \cite{}. In the rest of the paper, we focus on Backward CAR and all mentions of ``CAR'' represent Backward CAR. 
+The CAR algorithm maintains a finite \emph{under-approximate} state sequence $F=F_{0},F_{1},...,F_{k} (k\geq 0)$  starting from $I$  (the set of initial states), i.e., $F_{0}=I$,  and each $F_{i}$ is the set of states reachable from $I$ in $i$ steps. Such under-approximate sequence is called the \emph{F-sequence}. Also, CAR maintains an \emph{over-approximate} sequence $B = B_{0},B_{1},...,B_{k} (k\geq 0)$ starting from the bad states, i.e., $B_{0}=\neg P$, and a state is included in $B_{i}$ if it can reach $\neg P$ in $i$ steps. States in F-sequence are represented as a disjunction of cubes, while the states in B-sequence are represented as a conjunction of clauses. A summary of the constraints and safety/unsafety checking conditions are shown in TABLE \ref{tab:car}, and more details are referred to the next section.
+
+\begin{table}
+\caption{The Summary of Key Structures in CAR}\label{tab:car}
+\begin{tabular}{|c|c|c|} %l(left)居左显示 r(right)居右显示 c居中显示
+\hline 
+&\textbf{F-sequence (under)}&\textbf{B-sequence (over)}\\
+\hline  
+\textbf{Init}&$F_{0}=I$&$B_{0}=\neg P$\\
+\hline
+\textbf{Constraint}&$F_{i+1}\subseteq R(F_{i})$&$B_{i+1}\supseteq R^{-1}(B_{i})$ \\
+\hline
+\textbf{Safety Check}&-&$\exists i, B_{i+1}\subseteq \bigcup_{0<j<i}B_{j}$ \\
+\hline
+\textbf{UnSafety Check}&$\exists i,F_{i}\cap \neg P \neq \emptyset$&- \\
+\hline
+\end{tabular}
+\end{table}
+
+

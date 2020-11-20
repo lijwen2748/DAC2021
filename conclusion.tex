@@ -1,0 +1,14 @@
+\section{Concluding Remarks}
+Applying the restart policy on Hardware Model Checking Boosts intends to avoid waiting too long in the hope of there will be a future run will succeed finally, while the top-level decision is not so appropriate. The results of the experiments have not met our expectations due to the fact that we have not found many new counterexamples in a single run. But the new finding of 12 bugs indicates that the restart policy thus works effectively in the domain of hardware model checking. With the help of restart policy, the CAR algorithm can now find 17 instances with counterexample out of 749 industrial cases that the BMC can not find, which also increases the ability of the current hardware model checking portfolio. We view our work as a beginning step to a better understanding of the role restart policy can play in hardware model-checking algorithms.
+
+In future work, after confirmed whether the restart policy works in the domain of hardware model checking, we plan to design more elaborate and sophisticated mechanisms to enhance the model checking algorithm's performance. Due to the fact that different cases are sensitive to various levels of the frequency of the restart policy, the work of parameter learning is also meaningful.
+
+
+\begin{thebibliography}{00}
+\bibitem{b1} Biere, A., Cimatti, A., Clarke, E., Zhu, Y.: Symbolic model checking without BDDs. In: Cleaveland, W.R. (ed.) Tools and Algorithms for the Construction and Analysis of Systems. pp. 193–207. Springer Berlin Heidelberg, Berlin, Heidelberg (1999)
+\bibitem{b2} Li, J., Zhu, S., Zhang, Y., Pu, G., Vardi, M.Y.: Safety model checking with complementary approximations. In: Proceedings of the 36th International Conference on Computer-Aided Design, 2017, pp. 95–100
+\bibitem{b3} Biere, A., Cimatti, A., Clarke, E.M., Fujita, M., Zhu, Y.: Symbolic model checking using sat procedures instead of bdds (1999), http://doi.acm.org/10.1145/309847.309942
+\bibitem{b4} Huang, Jinbo. "The Effect of Restarts on the Efficiency of Clause Learning." IJCAI. Vol. 7. 2007.
+
+
+\end{thebibliography}

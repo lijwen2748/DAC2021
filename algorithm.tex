@@ -1,0 +1,148 @@
+\section{Algorithm Design}
+\begin{algorithm}[thb]
+\caption{Main Procedures of CAR}\label{alg:car}
+\hspace*{0.02in} {\bf Input:} %算法的输入， \hspace*{0.02in}用来控制位置，同时利用 \\ 进行换行
+$Sys=(V,I,T)$ and Safety Property $P$ \\
+\hspace*{0.02in} {\bf Output:} %算法的结果输出
+return safe or unsafe
+  \begin{algorithmic}[1]
+       \If {$SAT (I, \neg P)$ is satisfiable} \Return {\sf unsafe};\label{alg:car:start} \EndIf            
+       \State $F_0 := I$, $B_0 := \neg P$, $k := 0$;\label{alg:car:initialsequence} 
+       \State {\color{red}$restart:=false$, $count:=0$, $threshold :=threshold_0$};\label{alg:car:init}
+       \While{true} \label{alg:car:loopstart}                                                                 
+            \While{$($ Cube $s = $ {\sc PickState} $(F)) \not =\emptyset$}\label{alg:car:pickstate} 
+                \If{{\sc UnsafeCheck}$(s,k,k)$}\label{alg:car:unsafecheck} \Return {\sf unsafe}; \EndIf
+                \If{{\color{red}$restart$}}  break;\label{alg:car:restartbreak} \EndIf
+            \EndWhile          
+            \State \textbf{if} {\bf not} {\color{red}$restart$}\label{alg:car:restartcontrol} 
+            \State \qquad $k := k+1$;
+            \State \qquad \textbf{if} {\sc SafeCheck} $(k)$ \Return {\sf safe};\label{alg:car:safecheck}
+            
+            \State \textbf{else} {\color{red} RESTART()}\label{alg:car:loopend}  \label{alg:car:end}\label{alg:car:restartcall}
+       \EndWhile         
+\vspace{6pt}
+       \Procedure{{\sc UnsafeCheck}}{$s, i, k$}\label{alg:car:unsafecheckstart}
+       \State \textbf{if} {\color{red}\sc RestartPoint($k,threshold, count$)}\label{alg:car:restart} 
+       \State \qquad {\color{red}$restart:=true$;}
+       \State \qquad \Return{{\color{red}false}}\label{alg:car:restartend} 
+       \State Cube $\hat{s} := $ {\sc reorder}$(s)$;\label{alg:car:reorder} 
+       \While{$SAT(\hat{s}, T\wedge B^{'}_{i})$}           
+            \If {$i=0$} \Return {\sf true};\label{alg:car:level0} \EndIf
+            \State Cube $t = $ {\sf get\_assignment()};\label{alg:car:getassignment}                 
+            \State $F_{j+1} := F_{j+1} \cup t$ supposing $s$ is in $F_j$ ($j\geq 0$); 
+            \If {{\sc UnsafeCheck} $(t, i-1,k)$}\label{alg:car:unsafecheckrecursive} \Return {\sf true}; \EndIf           
+       \EndWhile\label{alg:backcar:unsafecheck:loop-end}
+       \State Cube $c := ${\sf get\_unsat\_core()} \label{alg:car:getunsatcore}
+       \State \textcolor{red}{$count := count + 1$;}\label{alg:car:countplus}
+       \State $B_{i+1} := B_{i+1}\cap \neg c$;   
+    %\State {\color{red}$count:=count+1$}
+       \State \Return {\sf false};
+       \EndProcedure \label{alg:car:unsafecheckend}              
+ \vspace{6pt}
+       \Procedure{\sc SafeCheck}{$k$}\label{alg:car:safecheckstart}               
+       \State $i = 0$;
+       \While{$i < k$} 
+            \State \textbf{if} {\bf not} $SAT(\emptyset,\neg(B_{i+1}\Rightarrow(\bigvee_{0\leq j\leq i}B_j)))$
+            \State \qquad \Return {\sf true}; 
+       \EndWhile
+       \State \Return {\sf false};
+       \EndProcedure \label{alg:car:safecheckend}              
+     \end{algorithmic}
+\end{algorithm}
+\subsection{Algorithmic Description of CAR}
+The pseudo-codes of CAR's main procedures are shown in Alg. \ref{alg:car}.  The algorithm takes a system $Sys=(V,I,T)$ and a safety property $P$ as the inputs, and outputs \emph{safe} if an invariant is detected (Line \ref{alg:car:safecheck}) or \emph{unsafe} if a counterexample is found (Line \ref{alg:car:unsafecheck}). The texts in red are introduced to implement the restart policy, which will be explained in the next section. 
+
+\iffalse
+The CAR algorithm persistently generates new elements and then insert them into F-sequence or B-sequence through repeating calls to the SAT solver until either Safety Check or Unsafety check in TABLE I returns true. Obviously, the $Sys$ holds the property $P$ when Safety Check returns true, while a counterexample is found when UnSafety Check returns true. We will describe the CAR algorithm. followed by the heuristics of the restart policy. 
+
+Here we demonstrate the top-level procedure of CAR algorithm, which is implemented in hundreds of lines of C++. The algorithm takes a system $Sys=(V,I,T)$ and a safety property $P$ as inputs, and the output will be safety when the algorithm finds an invariant to prove the $Sys$ satisfied $P$ or return unsafe when a counterexample is found. \textbf{The Text in red is related to restart policy, please ignore them temporarily}.
+\fi 
+
+
+
+The main framework of CAR is shown from Line \ref{alg:car:start} to Line \ref{alg:car:end} of Alg. \ref{alg:car}. The first SAT call at Line \ref{alg:car:start} is used to check whether there is a counterexample with the length of $0$, which means that some initial state in $I$ is also a bad state in $\neg P$. If the SAT query returns unsatisfiable, CAR initializes the B-sequence and F-sequence at Line \ref{alg:car:initialsequence}, according to the rules in TABLE \ref{tab:car}. The while loop from Line \ref{alg:car:loopstart} to Line \ref{alg:car:loopend}, first calls the \emph{UNSAFECHECK} procedure to search new states and returns unsafe if a bad state is found. Meanwhile, the F- and B-sequence can be updated during the search inside the procedure. If \emph{UNSAFECHECK} proceeds but no bad states are detected, the \emph{SAFECHECK} procedure is then used to check whether an invariant can be found based on the information of the F-sequence. The while loop terminates as soon as one of the above two procedures returns. A summary of procedures used in CAR is listed below.
+
+\iffalse
+The main framework of CAR is shown from Line \ref{alg:car:start} to Line \ref{alg:car:end} of Alg. \ref{alg:car}. The first SAT call in the CAR algorithm (line 1) will always be $\mathit{SAT}(I,\neg P)$ to check if there is a counterexample with a length of $0$, that is, whether the set of initial states $I$ and the set of bad states $\neg P$ overlap. Then, CAR algorithm will initialize the B-sequence and F-sequence according to the rules in \textbf{TABLE I}(line 2). The main loop of CAR algorithm(line 4-11), constantly executing SAFECHECK($k$) and UNSAFECHECK($s,k,k$). 
+
+
+
+A more detailed description and semantics of the functions involved in CAR is in the list below:
+\fi
+
+\begin{itemize}
+    \item \textbf{PICKSTATE} at Line \ref{alg:car:pickstate} takes the F-sequence as input and uses some decision strategies to enumerate and select a state from the sequence. The procedure returns an empty set $\emptyset$ if there is no available state in the sequence.
+    \item \textbf{REORDER} at Line \ref{alg:car:reorder} takes a state as the input. Inspired from the concept of assumptions in modern SAT solvers, this procedure maintains two non-conflict policies named \emph{intersection} and \emph{rotation}, which are designed to generate smaller unsatisfiable cores so as to boost the efficiency of the algorithm. The procedure reorders the literals in $s$ to generate its new copy $\hat{s}$ (Cube $\hat{s}$ at Line \ref{alg:car:reorder}), which is then transferred to the SAT solver as assumptions. For example, given a state $s=l_{1}\cap l_{2}\cap l_{3}\cap l_{4}$, the returned state $\hat{s}$ may be $l_{3}\cap l_{4}\cap l_{1}\cap l_{2}$ according to the reorder policy inside the procedure. Although the SAT query result remains the same, the latter assumptions may lead to a  smaller unsatisfiable core (UC). 
+    \item \textbf{get\_assignment} at Line \ref{alg:car:getassignment} returns a satisfying assignment of the input formula if the SAT query result is satisfiable. A new state $t$ can be extracted from the assignment.
+    \item \textbf{get\_unsat\_core} at Line \ref{alg:car:getunsatcore} generates an unsatisfiable core, which is a subset of the assumptions in the current SAT call, if the query result is unsatisfiable.
+    \item \textbf{UNSAFECHECK} from Line \ref{alg:car:unsafecheckstart} to Line \ref{alg:car:unsafecheckend} takes a state s, an integer $i$ representing the current working level of the B-sequence, and an integer $k$ representing the maximum depth of the B-sequence as inputs. The procedure first reorders the input state $s$ to $\hat{s}$ through REORDER($s$), and then invokes a SAT call $\mathit{SAT}(\hat{s},T\cap B^{'}_{i})$ to check whether state $s$ can directly reach states in $B_{i}$. If the result is unsatisfiable, it calls get\_unsat\_core() to get an unsatisfiable core $c \subseteq s$. Considering that $\neg c$ represents the over-approximate set of states which should not be in $B_{i+1}$ because they can not reach $B_{i}$, the unsatisfiable core $c$ is added to $B_{i+1}$. On the other hand, if the SAT query is satisfiable and the given integer $i$ is 0 (Line \ref{alg:car:level0}), that is, state $s$ can reach the bad states in $B_{i}$. As the state s was selected from the F-sequence, a counterexample is found and the procedure returns true. If the SAT call is satisfiable with $i>0$ (Line \ref{alg:car:getassignment}-\ref{alg:car:unsafecheckrecursive}), we invoke get\_assignment() to get another state $t$, which is added into the F-sequence as the successor of $s$, and recursively invoke UNSAFECHECK($t,i-1,k$). 
+    \item \textbf{SAFECHECK} at Line \ref{alg:car:safecheckstart}-\ref{alg:car:safecheckend} takes an integer $k$, the depth of the B-sequence, as the input. By enumerating $i$ from $0$ to $k$, the procedure checks whether all the states in $B_{i+1}$ have been contained in the union set of $B_{0},B_{1},...,B{i}$. If this is the case, We can assert that all the states that can reach to bad state $B_{0}=\neg P$ have been included in the B-sequence. Because the initial states $I$ are not in the B-sequence, the system $Sys$ is safe for the property $P$. This procedure exactly implements the Safety-Check condition shown in TABLE \ref{tab:car}.
+    \item \textbf{RestartPoint} at Line \ref{alg:car:restart} returns true if CAR is ready to restart the state search according to the restart policies introduced in the next section.
+    
+    
+    \iffalse
+    \item \textbf{PICKSTATE}($F$) (line 5) takes a Sequence like F-sequence as input. It uses some decision heuristic to enumerate and select a state from the sequence and then returns it. It will return an empty set $\emptyset$, if there is no more state existed.
+    \item \textbf{REORDER}($s$) (line 16) takes a state as input. Inspired by the features of assumption in SAT solver, this procedure maintains two non-conflicting policies named intersection and rotation, which are designed to generate smaller unsatisfiable core and will boost the efficiency of the algorithm. It will tactfully reorder the assumption literals in $s$ to generate its reordered copy $\hat{s}$ (Cube $\hat{s}$ in line 16) and then return $\hat{s}$. For example, given a state $s=l_{1}\cap l_{2}\cap l_{3}\cap l_{4}$, the return state $\hat{s}$ can be $l_{3}\cap l_{4}\cap l_{1}\cap l_{2}$ with higher possibility to get a smaller unsatisfiable core. The REORDER procedure will never modify the actual value of a state.
+    \item \textbf{get\_assignment}() generate a satisfying assignment of variables shown in CNF formula of currently invoked SAT calls if its result is satiable.
+    \item \textbf{get\_unsat\_core}() generate an unsatisfiable core from assumption of currently invoked SAT calls if its result is unsatisfiable.
+    \item \textbf{UNSAFECHECK}($s,i,k$) procedure of line 12-24 takes a state s from the F-sequence through PICKSTATE(F), an integer $i$ representing current involved frame level of B-sequence, and an integer $k$ representing the maximum depth of the B-sequence as inputs. The procedure first reorder the input state $s$ to $\hat{s}$ through REORDER($s$), and then invoke a SAT call $\mathit{SAT}(\hat{s},T\cap B^{'}_{i})$ to confirm whether state $s$ can directly reach states in $B_{i}$. If the result is unsatisfiable, it will call get\_unsat\_core() to get a unsatisfiable core $c \subseteq s$. Considering the $\neg c$ represents the over-approximation of states which should be blocked by the $B_{i+1}$ because they can not reach $B_{i}$, the unsatisfiable core $c$ will added to $B_{i+1}$. On the other hand, if the SAT call is satiable and the given integer $i$ is 0 (line 18), that is, given state $s$ can reach the bad states $B_{0}$. As state s was selected from the F-sequence, an counterexample is found and the procedure return true. If the SAT call is satiable while given integer $i>0$ (line 19-21), we invoke get\_assignment() and get another state $t$. The assignment $t$ holds $(\hat{s},t) \in T$ and $t\in B_{i}$. We then add state $t$ to F-sequence as the successor of state $s$ and recursively invoke UNSAFECHECK($t,i-1,k$). From parameter $i$ to $i-1$, CAR algorithm move further towards bad states $B_{0}=\neg P$. If we temporarily ignore the restart policy, UNSAFECHECK will return true, if recursively find a counterexample, otherwise return false.
+    \item \textbf{SAFECHECK}(k) procedure of line 25-30 takes k, the depth of B-sequence, as input. Through enumerating $i$ from $0$ to $k$, we check whether all the states in $B_{i+1}$ have been contained in the union set of $B_{0},B_{1},...,B{i}$. If this is the case, We can assert that all the states that can reach to bad state $B_{0}=\neg P$ have been included in the B-sequence, which means the $Sys$ is safe. This procedure is equivalent to the Safety Check formula in \textbf{TABLE I}.
+    \item \textbf{RestartPoint}() procedure at line 13 return true iff CAR is to restart currently according to certain restart policy.
+    \fi
+\end{itemize}
+
+\subsection{Restart Policy}
+
+The \emph{restart} mechanism has been widely implemented in modern SAT solvers to improve their performance. The motivation comes from the observation that the search inside the solver may get trapped due to the improper assignments to the variables of the Boolean formula. Under such scenarios, it is almost impossible to find the final result  but only wastes the computation sources. As a result, it is reasonable to abandon the current search path and restart it again with different variable assignments. Studies have shown that such simple strategy turns out to be very efficient to help solve more satisfiable instances \cite{}. It is surprising to see that CAR also suffers from a similar problem to get trapped during state search, and the idea comes out straightforward that  applying the restart policy to CAR.
+
+As shown in Alg. \ref{alg:car}, the texts in red are pseudo-codes added to integrate the start policy in CAR. We choose the number of unsatisfiable cores generated during the search as the criteria to invoke the restart policy. The insight is that too many UCs are computed in a single search probably leads it to be trapped. To implement that, a counter variable \emph{count} is introduced to record such number in the current search, and its value increases every time a new UC is computed (Line \ref{alg:car:countplus}). Also, a threshold that can be dynamically updated is provided  and the restart policy is triggered as soon as the condition $count > threshold$ becomes true. Notably in the main loop of CAR, we use a flag $restart$ to control whether the restart policy should be triggered (Line \ref{alg:car:restartcontrol}), whose value is updated based on the return value of the \emph{RestartPoint} procedure (Line \ref{alg:car:restart}).
+
+Once the restart policy is triggered, CAR needs to abandon the current search and start over again. However, the frequency to restart is a key reason to affect the final performance. If the frequency is set too high, CAR may lose the instances that can be solved when no restart is applied to the algorithm. On the other hand, if the frequency is set too low, it may not be helpful to solve more instances that cannot solve when no restart is applied to the algorithm. In the implementation, we control the restart frequency according to a \emph{threshold}, whose value is initialized at the beginning ($threshold_0$ at Line \ref{alg:car:init}) and then can be updated based on a \emph{growth rate} $gr$. Parameter $threshold_0$ determines the initial frequency of the restart policy through the equation $bound = threshold_0 * (k+1)$, where $(k+1)$ representing the length of current B-sequence. How the restart frequency dynamically updates depends on $gr$. After each time the CAR algorithm triggers the restart policy, $threshold$ is multiplied by $gr$, leading to the increment of the restart's boundary. 
+
+In the UNSAFECHECK procedure,  RESTARTPOINT is set to judge whether it is time to restart. The procedure takes an integer $k$ representing the length of B-sequence and an integer $count$ which counts the number of new unsatisfiable cores (line \ref{alg:car:countplus}) generated in current search.  Considering the B-sequence is an over-approximate sequence, generating new unsatisfiable cores exactly makes the B-sequence more precise, which may prevent the algorithm from searching the same path. Therefore, we take the length of B-sequence into consideration, and the restart boundary is the product of the length of B-sequence and $threshold$. As soon as  $count$ is larger than $bound$, RESTARTPOINT returns true and the $restart$ flag becomes true, which makes the procedure UNSAFECHECK terminate with output "false" (line \ref{alg:car:restart}-\ref{alg:car:restartend}). After the restart point is reached, all of current recursive calls of UNSAFECHECK are returned as false, leading to the termination of loop from Line \ref{alg:car:pickstate}-\ref{alg:car:restartbreak} as well as the entry to the procedure RESTART at Line \ref{alg:car:restartcall}.
+
+The RESTART procedure at Line \ref{alg:restart:begin} of Alg. \ref{alg:restart} resets the unsatisfiable core counter $count$ (line \ref{alg:restart:countreset} in Alg. \ref{alg:restart}) and enlarge the $threshold$ with growth rate $gr$ (Line \ref{alg:restart:thresholdupdate} in Alg. \ref{alg:restart}). Compared to the previous search from initial states $I$, we have updated $B_{i}$ with a certain number of unsatisfiable cores, which probably results in a different search path.
+The procedure BACKTRACK contains the process of returning to initial states $I$, eliminating the F-sequence to release the memory, and some auxiliary work like the reconstruction of the SAT solver due to the memory consideration. Details are omitted here.
+
+\iffalse
+For the sake of enhancing the performance of CAR in bug-finding, we concentrate on restart the route to find the counterexample. As we mentioned before, the text in red is related to restart policy. we will explain the role of them and detailed heuristic of our restart policy in this part.
+
+
+To restart indicate that we need to abandon current search route after a certain time has passed and compute over again. There is a fact that the searching process can be stuck in a relatively complex part even if the case is very simple overall. So the frequency of restart should be treated carefully. In the CAR algorithm, we control the frequency of restart through two macro parameters : $threshold$ and $gr$. Parameter $threshold$ will determine the initial frequency of the restart as the actual boundary to trigger the restart is calculated by $bound = bpl * (k+1)$, where $(k+1)$ representing the length of current B-sequence and $threshold$ is the initial value of $bpl$. How the frequency of restart policy dynamically changes depends on $gr$. After each time the CAR algorithm trigger the restart, the $bpl$ will be multiplied by $gr$, leading to the variation of the restart's boundary.
+
+
+In the procedure of UNSAFECHECK($s,i,k$), the RESTARTPOINT is set to judge whether it is time to restart. It take an integer $k$ representing the length of B-sequence and an integer $count$ which counts the number of new unsatisfiable core (line 24) generated in current cycle. We treat a single execution of the loop body of line 5-11 in \textbf{Alg. 1} as a cycle. We use the number of new generated unsatisfiable core to represent the general computation used in the current search route. Considering the B-sequence is an over-approximate sequence, generating new unsatisfiable core exactly make the B-sequence more precise, which may prevent the algorithm to get the same search route. Therefore, we take the length of B-sequence into consideration, the restart boundary is the product of the length of B-sequence and $bpl$ (bound per layer). When the $count$ is larger than $bound$, RESTARTPOINT will return true, that will cause the trigger $restart$ to be set to true and then terminate current procedure UNSAFECHECK with output "false" (line 13-15). After we reach the restart point, all of current recursive calls of UNSAFECHECK will identical be returned as false, leading to the termination of loop of line 5-7 as well as entry RESTART at line 11.
+\fi
+
+\begin{algorithm}[t]
+\caption{The Restart Policy}\label{alg:restart}
+\begin{algorithmic}[1]
+    \Procedure{\sc RestartPoint}{$k, threshold, count$}               
+        \State Let $bound := (k+1) * threshold$;
+        \If {$count > bound$} \Return {\sf true}; \EndIf
+        \State \textbf{else} \Return{\sf false};
+    \EndProcedure      
+\vspace{6pt}
+    \Procedure{\sc Restart}{}\label{alg:restart:begin}
+        \State $count:=0$;\label{alg:restart:countreset}
+        \State $threshold = threshold * gr$;\label{alg:restart:thresholdupdate}
+        \State {\sc BACKTRACK}(); 
+        
+    \EndProcedure
+
+\end{algorithmic}
+\end{algorithm}
+
+\iffalse
+The RESTART procedure at line 5, will go back to the initial state $I$, that is to search from the initial states $I$ again after restoring the unsatisfiable core counter $count$ (line 6 in Alg. 2) and enlarge the $bpl$ with growth rate $gr$ (line7 in Alg. 2). Compared with the last time when CAR looks for the counterexample from initial state $I$, we have updated $B_{i}$ with a certain number of unsatisfiable cores, which will probably result in a different route.
+
+The procedure BACKTRACK() contains the process of returning to initial states $I$, eliminating the F-sequence to release the memory, since the current search path is no longer useful, and some auxiliary work like the reconstruction of the SAT solver.
+\fi
+
+
+
+
+
+
+
+
