@@ -33,7 +33,7 @@ In mathematical logic, given an unsatisfiable Boolean propositional formula in c
 \subsection{An Overview of Complementary Approximate Reachability}
 
 Derived from the traditional reachability analysis, CAR can also perform in both the forward and backward directions. 
-As mentioned before, Backward CAR has been shown better than Forward CAR \cite{}. In the rest of the paper, we focus on Backward CAR and all mentions of ``CAR'' represent Backward CAR. 
+As mentioned before, Backward CAR has been shown better than Forward CAR \cite{LDPRV18}. In the rest of the paper, we focus on Backward CAR and all mentions of ``CAR'' represent Backward CAR. 
 The CAR algorithm maintains a finite \emph{under-approximate} state sequence $F=F_{0},F_{1},...,F_{k} (k\geq 0)$  starting from $I$  (the set of initial states), i.e., $F_{0}=I$,  and each $F_{i}$ is the set of states reachable from $I$ in $i$ steps. Such under-approximate sequence is called the \emph{F-sequence}. Also, CAR maintains an \emph{over-approximate} sequence $B = B_{0},B_{1},...,B_{k} (k\geq 0)$ starting from the bad states, i.e., $B_{0}=\neg P$, and a state is included in $B_{i}$ if it can reach $\neg P$ in $i$ steps. States in F-sequence are represented as a disjunction of cubes, while the states in B-sequence are represented as a conjunction of clauses. A summary of the constraints and safety/unsafety checking conditions are shown in TABLE \ref{tab:car}, and more details are referred to the next section.
 
 \begin{table}
