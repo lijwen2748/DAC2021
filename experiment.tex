@@ -32,7 +32,7 @@ To evaluate the performance of the restart policy on CAR from this paper, we fir
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\linewidth]{images/car-bmc.pdf} 
-\caption{Number of unsafe benchmarks solved. The “uniquely solved” benchmarks are not solved by any other algorithm category, except the comparison of CAR and CAR-all.}\label{fig:compare}
+\caption{Number of unsafe benchmarks solved. The “uniquely solved” benchmarks are not solved by any other algorithm category, except the comparison of CAR and CAR-select. CAR-select is the combination of CAR, ``64-1.2'', ``128-1.2'', ``128-1.5'' and ``256-1.2''}\label{fig:compare}
 \end{figure}
 
 We then vary $threshold$ from 64 to 1024 by fixing $gr$ to be 1.0, 1.2 and 1.5 respectively. The corresponding results are shown in 
@@ -41,4 +41,4 @@ Fig. \ref{fig:car:1.0}-\ref{fig:car:1.5}. Combining the results from Fig. \ref{f
 It should be highlighted that, although IC3/PDR can also perform differently by varying the paremeters to generate the inductive clauses \cite{}, it help more to prove safe instances. Meanwhile, applying the restart policy to CAR results in a better performance on solving unsafe instances that can produce the counterexamples. 
 
 \subsubsection{Comparison to original CAR and BMC }
-As shown in Fig. \ref{fig:compare}, the BMC implementation in ABC solve 153 unsafe instances. CAR-all includes the results from CAR with and without the restart policy by choosing different parameters ($threshold$ and $gr$). In summary, the restart policy helps CAR find 12 more counterexamples (from 145 to 157) and 4 more ``unique solved'' that can only solved by CAR. Also, CAR-all solves 157 instances in total, which outperforms BMC (the amount is 153) and gains 15 instances that can not be found by BMC. The virtual combination of CAR-all and BMC  solves 170 instances, which affirms that the restart policy plays a non-negligible role as a part of the portfolio for hardware model checking.
+As shown in Fig. \ref{fig:compare}, the BMC implementation in ABC solve 153 unsafe instances. We combined the results of four experiments(``64-1.2'', ``128-1.2'', ``128-1.5'' and ``256-1.2'')and CAR, noted as ``CAR-select''. Observing ``'CAR-select'', the restart policy helps CAR find 12 more counterexamples (from 145 to 157) and 4 more ``unique solved'' that can only solved by CAR. Also, ``CAR-select'' solves 157 instances in total, which outperforms BMC (the amount is 153) and gains 17 instances that can not be found by BMC. The virtual combination of ``CAR-select'' and BMC solves 170 instances, which affirms that the restart policy plays a non-negligible role as a part of the portfolio for hardware model checking.
