@@ -31,7 +31,7 @@ In mathematical logic, given an unsatisfiable Boolean propositional formula in c
 
 Derived from the traditional reachability analysis, CAR can also perform in both the forward and backward directions. 
 As mentioned before, Backward CAR has been shown better than Forward CAR \cite{LDPRV18}. In the rest of the paper, we focus on Backward CAR and all mentions of ``CAR'' represent Backward CAR. 
-The CAR algorithm maintains a finite \emph{under-approximate} state sequence $F=F_{0},F_{1},...,F_{k} (k\geq 0)$  starting from $I$  (the set of initial states), i.e., $F_{0}=I$,  and each $F_{i}$ is a  subset of states reachable from $I$ in $i$ steps. Such under-approximate sequence is called the \emph{F-sequence}. Also, CAR maintains an \emph{over-approximate} sequence $B = B_{0},B_{1},...,B_{k} (k\geq 0)$ starting from the bad states, i.e., $B_{0}=\neg P$, and a state is included in $B_{i}$ if it can reach $\neg P$ in $i$ steps. States in F-sequence are represented as a disjunction of cubes, while the states in B-sequence are represented as a conjunction of clauses. A summary of the constraints and safety/unsafety checking conditions are shown in TABLE \ref{tab:car}, and more details are referred to the next section.
+The CAR algorithm maintains a finite \emph{under-approximate} state sequence $F=F_{0},F_{1},...,F_{k} (k\geq 0)$  starting from $I$  (the set of initial states), i.e., $F_{0}=I$,  and each $F_{i}$ is a  subset of states reachable from $I$ in $i$ steps. Such under-approximate sequence is called the \emph{F-sequence}. Also, CAR maintains an \emph{over-approximate} sequence $B = B_{0},B_{1},...,B_{k} (k\geq 0)$ starting from the bad states, i.e., $B_{0}=\neg P$, and a state is included in $B_{i} (i\geq 0)$ if it can reach $\neg P$ in $i$ steps. Also, each element $B[i]$ of the B-sequence is named a \emph{frame} and $i$ is the \emph{frame level}. States in F-sequence are represented as a disjunction of cubes, while the states in B-sequence are represented as a conjunction of clauses. A summary of the constraints and safety/unsafety checking conditions are shown in TABLE \ref{tab:car}, and more details are referred to the next section.
 
 \subsection{SAT calls with assumptions and unsatisfiable core}
 The CAR algorithm frequently invokes the SAT calls whose inputs have the form of $A\wedge B$, where B is a CNF formula, a Boolean formula with the form of $\bigwedge c_i$ where each $c_i$ is a clause, and A is a cube. We use the notation $SAT(A, B)$ to represent such SAT query and take $A$ as the \emph{assumptions} of the SAT solver. Although the result of $SAT(\emptyset,A \bigwedge B)$ is equivalent to that of $SAT(A,B)$, using the latter one is typically more flexible for incremental SAT solving, which is a very efficient mechanism to frequently invoke SAT solvers in practice.   
@@ -48,9 +48,9 @@ There are two different outcomes from an SAT solver when handling the query $SAT
 \hline
 \textbf{Constraint}&$F_{i+1}\subseteq R(F_{i})$&$B_{i+1}\supseteq R^{-1}(B_{i})$ \\
 \hline
-\textbf{Safety Check}&-&$\exists i, B_{i+1}\subseteq \bigcup_{0<j<i}B_{j}$ \\
+\textbf{Safety Check}&-&$\exists i\cdot B_{i+1}\subseteq \bigcup_{0<j<i}B_{j}$ \\
 \hline
-\textbf{UnSafety Check}&$\exists i,F_{i}\cap \neg P \neq \emptyset$&- \\
+\textbf{UnSafety Check}&$\exists i\cdot F_{i}\cap \neg P \neq \emptyset$&- \\
 \hline
 \end{tabular}
 %\vspace{-20pt}
